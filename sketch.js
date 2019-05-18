@@ -215,54 +215,6 @@ function validHand(hand, empty){
     return true;
 }
 
-function hands(stones, count, empty) {
-    var stoneset = new Set(stones);
-    var choose = [];
-    var conf = [];
-    for (let i = 0; i < count[0]; i++) {
-        conf.push(i);
-    }
-    var i = count[0] - 1;
-    while (true) {
-        while (conf[i] < stones.length) {
-            var n = [];
-            for (let j of conf) {
-                n.push(stones[j]);
-            }
-
-            if(!validHand([n], [empty[0]])){
-                conf[i]+=1;
-                continue;
-            }
-
-            if (count.length > 1) {
-                var n2 = new Set(n);
-                var t = [...setDifference(stoneset, n2)];
-
-                for (j of hands(t, count.slice(1), empty.slice(1))) {
-                    choose.push([n, ...j]);
-                }
-            } else {
-                choose.push([n]);
-            }
-            conf[i] += 1;
-        }
-        i -= 1
-        while (i >= 0 && conf[i] + 1 == conf[i + 1]) {
-            i -= 1;
-        }
-        if (i == -1) {
-            break;
-        }
-        conf[i] = conf[i] + 1;
-        while (i < count[0] - 1) {
-            conf[i + 1] = conf[i] + 1;
-            i += 1;
-        }
-    }
-    return choose;
-}
-
 function draw() {
 
 }
