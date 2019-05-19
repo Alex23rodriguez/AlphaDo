@@ -2,30 +2,48 @@ var used = [[], [], [], []];
 var dran;
 var moves;
 var wins;
+var totalWins;
 var CHAIN;
 
-var pr = true;
+var probability = 1;
+
+var pr = false;
 
 //recursive
-function play_wrapper(ps, start, chain) {
-  //global moves, wins, TIME, CHAIN, PLAYERS
+function play_wrapper(ps, start, board, chain) {
   moves = make_moves(ps);
   wins = [0, 0, 0, 0, 0];
 
   u = [new Set(), new Set(), new Set(), new Set()];
   let [p, i] = find_st(ps, ...start);
+
   CHAIN = [ps[p][i]];
   u[p].add(int(i));
 
+  if (board) {
+    //NOTE: if a board is passed, will always asume you want to place start[0]
+    if (board[0] == start[0]) {
+      board[0] = start[1];
+    } else if (board[1] == start[0]) {
+      board[1] = start[1];
+    } else {
+      console.log("You can't call wrapper with this piece!");
+      return;
+    }
+  }
+
   let TIME = new Date();
   if (chain) {
-    play_r_ch(start, (p + 1) % 4, u, p);
+    play_r_ch(board || start, (p + 1) % 4, u, p);
   } else {
-    play_r(start, (p + 1) % 4, u, p);
+    play_r(board || start, (p + 1) % 4, u, p);
   }
   TIME = new Date() - TIME;
-  if (pr) {
+  if (pr || random() < probability) {
     let sum = wins.reduce((a, b) => a + b, 0);
+    console.log('TCL: functionplay_wrapper -> probability', probability);
+    probability /= 10;
+
     console.log('Games played:' + sum);
     console.log('Time: ' + TIME);
     console.log('Results:');
@@ -270,9 +288,10 @@ function generateHands() {
   let em = empty.slice(1); // dont consider player
   let e = em.map(x => x.length);
   //sort both elemets desc, according to the ammount of empty hands
-  let em2 = em.slice().sort((i, j) => e[em.indexOf(i)] < e[em.indexOf(j)]);
   let count = fichaCount.slice(1);
   count.sort((i, j) => e[count.indexOf(i)] < e[count.indexOf(j)]);
+  let em2 = em.slice().sort((i, j) => e[em.indexOf(i)] < e[em.indexOf(j)]);
+
   let hs = hands(otras, count, em2);
   let sort_inverse = (i, j) => e[h.indexOf(i)] < e[h.indexOf(j)];
 
@@ -283,4 +302,48 @@ function generateHands() {
     ans.push(h2);
   }
   return ans;
+}
+
+function my_moves(hand, b) {
+  if (!hand) {
+    hand = misRest;
+    b = board.slice();
+  }
+  let m = [];
+  if (b[0] == b[1]) {
+    b.pop();
+  }
+  for (let i of b) {
+    //nums
+    for (let j = 0; j < hand.length; j++) {
+      //st
+      if (hand[j][0] == i) {
+        m.push([hand[j][0], hand[j][1]]);
+      } else if (hand[j][1] == i) {
+        m.push([hand[j][1], hand[j][0]]);
+      }
+    }
+  }
+  return m;
+}
+
+function evalFichas(posHands) {
+  let TIME = new Date();
+  let mov = my_moves(misRest, board.slice());
+  for (m of mov) {
+    console.log('TCL: pieza', m);
+    TIME = new Date() - TIME;
+    totalWins = [0, 0, 0, 0, 0];
+    for (ps of posHands) {
+      wins = play_wrapper(ps, m.slice(), board.slice());
+      totalWins = totalWins.map((n, i) => n + wins[i]);
+    }
+    let sum = totalWins.reduce((a, b) => a + b, 0);
+    console.log('Time: ', TIME);
+    let ww = [];
+    for (let i of totalWins) {
+      ww.push((i / sum) * 100);
+    }
+    console.log(ww);
+  }
 }
