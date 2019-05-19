@@ -5,7 +5,7 @@ var wins;
 var totalWins;
 var CHAIN;
 
-var probability = 1;
+var probability = 0;
 
 var pr = false;
 
@@ -281,7 +281,7 @@ function hands(stones, count, empty) {
   return choose;
 }
 
-function generateHands() {
+function generateHands_() {
   // sorts empty desc to optimize choose function, then applies inverse sort!
   let otras = fichas.filter(x => !misFichas.includes(x));
 
@@ -302,6 +302,20 @@ function generateHands() {
     ans.push(h2);
   }
   return ans;
+}
+
+function generateHands() {
+  let otras = fichas.filter(x => !misFichas.includes(x));
+
+  let em = empty.slice(1); // dont consider player
+  let hs = hands(otras, fichaCount.slice(1), em);
+
+  let ans = [];
+  for (h of hs) {
+    h.unshift(misRest);
+    ans.push(h);
+  }
+  return hs;
 }
 
 function my_moves(hand, b) {
@@ -328,14 +342,45 @@ function my_moves(hand, b) {
 }
 
 function evalFichas(posHands) {
+  let l = posHands.length;
+  let iter = min(l, 1000);
   let TIME = new Date();
   let mov = my_moves(misRest, board.slice());
   for (m of mov) {
     console.log('TCL: pieza', m);
     TIME = new Date() - TIME;
     totalWins = [0, 0, 0, 0, 0];
-    for (ps of posHands) {
-      wins = play_wrapper(ps, m.slice(), board.slice());
+    for (i = 0; i < iter; i++) {
+      wins = play_wrapper(posHands[int(random(l))], m.slice(), board.slice());
+      totalWins = totalWins.map((n, i) => n + wins[i]);
+    }
+    let sum = totalWins.reduce((a, b) => a + b, 0);
+    console.log('Time: ', TIME);
+    let ww = [];
+    for (let i of totalWins) {
+      ww.push((i / sum) * 100);
+    }
+    console.log(ww);
+  }
+}
+
+function evalFichas(posHands, it) {
+  it = it || Infinity;
+  let l = posHands.length;
+  let iter = min(l, it);
+  let max = l == iter;
+  let TIME = new Date();
+  let mov = my_moves(misRest, board.slice());
+  for (m of mov) {
+    console.log('TCL: pieza', m);
+    TIME = new Date() - TIME;
+    totalWins = [0, 0, 0, 0, 0];
+    for (i = 0; i < iter; i++) {
+      if (max) {
+        wins = play_wrapper(posHands[i], m.slice(), board.slice());
+      } else {
+        wins = play_wrapper(posHands[int(random(l))], m.slice(), board.slice());
+      }
       totalWins = totalWins.map((n, i) => n + wins[i]);
     }
     let sum = totalWins.reduce((a, b) => a + b, 0);
